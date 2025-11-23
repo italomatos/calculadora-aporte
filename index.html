@@ -121,6 +121,44 @@
                     </tfoot>
                   </table>
                 </div>
+                <div class="save-panel mt-4 pt-4">
+                  <div class="row g-3 align-items-end">
+                    <div class="col-md-8">
+                      <label for="distribution-name" class="form-label fw-semibold">
+                        Nome da distribuição
+                      </label>
+                      <input
+                        type="text"
+                        id="distribution-name"
+                        class="form-control"
+                        maxlength="40"
+                        placeholder="Ex.: Perfil agressivo"
+                        autocomplete="off"
+                      />
+                      <div id="save-feedback" class="form-text mt-2" aria-live="polite"></div>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                      <button type="button" id="save-distribution" class="btn btn-success btn-lg">
+                        Salvar distribuição
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-muted small mt-3 mb-0">
+                    Guarde versões diferentes e alterne entre elas para comparar rapidamente.
+                  </p>
+                </div>
+                <div class="saved-collection mt-4">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                    <p class="text-muted fw-semibold mb-0">Distribuições salvas</p>
+                    <small class="text-muted" id="saved-counter">Nenhuma ainda</small>
+                  </div>
+                  <div
+                    id="saved-distributions"
+                    class="vstack gap-2"
+                    aria-live="polite"
+                    aria-label="Lista de distribuições salvas"
+                  ></div>
+                </div>
               </div>
             </div>
           </section>

@@ -145,6 +145,84 @@ body {
   min-height: 3rem;
 }
 
+.save-panel {
+  border-top: 1px dashed var(--app-border);
+}
+
+.saved-collection {
+  border: 1px solid var(--app-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: var(--app-surface);
+}
+
+.saved-card {
+  border: 1px solid var(--app-border);
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: #f8f9ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saved-card:hover,
+.saved-card:focus-visible {
+  border-color: var(--app-primary);
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+}
+
+.saved-card.is-active {
+  border-color: var(--app-primary);
+  background: var(--app-primary-muted);
+  box-shadow: 0 15px 35px rgba(95, 61, 196, 0.25);
+}
+
+.saved-card__title {
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.saved-card__meta {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.saved-card__badge {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--app-primary);
+}
+
+.saved-card__delete {
+  border: none;
+  background: transparent;
+  color: var(--app-danger);
+  font-weight: 600;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.saved-card__delete:hover,
+.saved-card__delete:focus-visible {
+  opacity: 1;
+}
+
+.saved-empty {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  border: 1px dashed var(--app-border);
+  color: #64748b;
+  text-align: center;
+}
+
 footer {
   border-top: 1px solid var(--app-border);
   background: var(--app-surface);
@@ -157,6 +235,11 @@ footer {
 
   .hero-pill {
     width: 100%;
+  }
+
+  .saved-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

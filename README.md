@@ -24,6 +24,7 @@ Aplicação web responsiva que distribui o valor de um aporte entre vários ativ
 - Cálculo automático conforme o usuário digita.
 - Prevenção de valores negativos ou inválidos.
 - Interface adaptada para dispositivos móveis e desktops.
+- Salvamento em memória de várias distribuições nomeadas, com carregamento rápido.
 
 ## Como usar
 
@@ -32,6 +33,7 @@ Aplicação web responsiva que distribui o valor de um aporte entre vários ativ
 3. Use o botão “Adicionar ativo” para criar novas linhas ou o ícone de lixeira para removê-las.
 4. Preencha o nome e o percentual de cada ativo; a tabela de resultados será atualizada automaticamente.
 5. Ajuste os percentuais até atingir exatamente 100% para liberar o resultado final.
+6. Dê um nome à configuração no cartão de resultados e clique em “Salvar distribuição” para memorizar o cenário atual.
 
 > Dica: ao focar no campo de valor total, o número é mostrado sem formatação para facilitar a edição; ao sair do campo ele volta a aparecer como moeda.
 
@@ -53,6 +55,14 @@ Qualquer alteração nos percentuais ou no valor total atualiza a tabela em temp
 - `index.html` — Estrutura, carregamento do Bootstrap e containers principais.
 - `styles.css` — Personalizações de layout, cores e estados de validação.
 - `script.js` — Lógica para manipular ativos, validar percentuais e calcular aportes.
+
+## Distribuições salvas
+
+- As distribuições ficam guardadas apenas em memória enquanto a aba estiver aberta (não há backend ou armazenamento local).
+- Cada cenário contém o valor do aporte e a lista de ativos/percentuais que estava vigente no momento do salvamento.
+- Salvar com o mesmo nome atualiza o cenário existente; nomes diferentes criam novas entradas.
+- Use o botão “Remover” para apagar distribuições que não fazem mais sentido.
+- Ao clicar em um cartão salvo, a interface carrega imediatamente os dados e recalcula o resultado com o valor informado no cenário (você pode alterar o valor e salvar novamente se quiser comparar).
 
 Sinta-se à vontade para adaptar a lista inicial de ativos ou a paleta de cores no CSS conforme a identidade do seu projeto.
 

@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTotal = document.getElementById('results-total');
   const resultsPercentTotal = document.getElementById('results-percent-total');
   const resultHint = document.getElementById('result-hint');
+  const distributionNameInput = document.getElementById('distribution-name');
+  const saveDistributionButton = document.getElementById('save-distribution');
+  const savedDistributionsContainer = document.getElementById('saved-distributions');
+  const savedCounter = document.getElementById('saved-counter');
+  const saveFeedback = document.getElementById('save-feedback');
 
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -30,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const percentageTolerance = 0.01;
   let assetCounter = 0;
+  let savedDistributionId = 0;
+  let activeDistributionId = null;
+  const savedDistributions = [];
 
   addAssetButton.addEventListener('click', () => addAsset());
 
@@ -46,9 +54,22 @@ document.addEventListener('DOMContentLoaded', () => {
     totalInput.select();
   });
 
+  saveDistributionButton?.addEventListener('click', handleSaveDistribution);
+  distributionNameInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSaveDistribution();
+    }
+  });
+
+  savedDistributionsContainer?.addEventListener('click', handleSavedListInteraction);
+  savedDistributionsContainer?.addEventListener('keydown', handleSavedListKeydown);
+
   defaultAssets.forEach(addAsset);
   totalInput.value = currencyFormatter.format(5000);
   recalculate();
+  renderSavedDistributions();
+  setSaveFeedback('Salve diferentes perfis para alternar entre cenários rapidamente.', 'muted');
 
   function addAsset(initialData = {}) {
     const row = assetTemplate.content.firstElementChild.cloneNode(true);
@@ -221,6 +242,212 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function toggleResults(shouldShow) {
     resultsTable.classList.toggle('d-none', !shouldShow);
+  }
+
+  function handleSaveDistribution() {
+    if (!distributionNameInput) return;
+
+    const scenarioName = distributionNameInput.value.trim();
+    if (!scenarioName) {
+      setSaveFeedback('Escolha um nome antes de salvar a distribuição.', 'danger');
+      distributionNameInput.focus();
+      return;
+    }
+
+    const rows = Array.from(assetsList.querySelectorAll('.asset-row'));
+    if (!rows.length) {
+      setSaveFeedback('Adicione pelo menos um ativo para salvar.', 'danger');
+      return;
+    }
+
+    const totalAmount = parseCurrencyToNumber(totalInput.value);
+    if (!totalAmount) {
+      setSaveFeedback('Informe um valor de aporte válido para salvar.', 'danger');
+      totalInput.focus();
+      return;
+    }
+
+    const assetsPayload = serializeAssets(rows);
+    const sumPercentages = assetsPayload.reduce((acc, asset) => acc + asset.percentage, 0);
+    if (Math.abs(sumPercentages - 100) > percentageTolerance) {
+      setSaveFeedback('A soma dos percentuais precisa ser 100% para salvar.', 'danger');
+      return;
+    }
+
+    const normalizedName = scenarioName.toLowerCase();
+    const existingIndex = savedDistributions.findIndex((item) => item.normalizedName === normalizedName);
+
+    const distributionData = {
+      id: existingIndex > -1 ? savedDistributions[existingIndex].id : savedDistributionId++,
+      name: scenarioName,
+      normalizedName,
+      totalAmount,
+      assets: assetsPayload,
+    };
+
+    if (existingIndex > -1) {
+      savedDistributions[existingIndex] = distributionData;
+    } else {
+      savedDistributions.push(distributionData);
+    }
+
+    activeDistributionId = distributionData.id;
+    renderSavedDistributions();
+    setSaveFeedback(
+      existingIndex > -1
+        ? `Distribuição "${scenarioName}" atualizada.`
+        : `Distribuição "${scenarioName}" salva com sucesso.`,
+      'success'
+    );
+  }
+
+  function handleSavedListInteraction(event) {
+    const deleteButton = event.target.closest('[data-action="delete"]');
+    if (deleteButton) {
+      deleteDistribution(deleteButton.dataset.id);
+      return;
+    }
+
+    const card = event.target.closest('.saved-card');
+    if (!card) return;
+    loadDistribution(card.dataset.id);
+  }
+
+  function handleSavedListKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (event.target.closest('[data-action="delete"]')) {
+      return;
+    }
+    const card = event.target.closest('.saved-card');
+    if (!card) return;
+    event.preventDefault();
+    loadDistribution(card.dataset.id);
+  }
+
+  function renderSavedDistributions() {
+    if (!savedDistributionsContainer) return;
+    savedDistributionsContainer.innerHTML = '';
+
+    if (!savedDistributions.length) {
+      const emptyState = document.createElement('p');
+      emptyState.className = 'saved-empty mb-0';
+      emptyState.textContent = 'Nenhuma distribuição salva até agora.';
+      savedDistributionsContainer.appendChild(emptyState);
+    } else {
+      const fragment = document.createDocumentFragment();
+      savedDistributions.forEach((distribution) => {
+        const card = createSavedCardElement(distribution);
+        fragment.appendChild(card);
+      });
+      savedDistributionsContainer.appendChild(fragment);
+    }
+
+    updateSavedCounter();
+  }
+
+  function createSavedCardElement(distribution) {
+    const card = document.createElement('div');
+    card.className = 'saved-card';
+    card.dataset.id = distribution.id;
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    const isActive = distribution.id === activeDistributionId;
+    card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    if (isActive) {
+      card.classList.add('is-active');
+    }
+
+    const infoWrapper = document.createElement('div');
+    const title = document.createElement('p');
+    title.className = 'saved-card__title mb-1';
+    title.textContent = distribution.name;
+    const meta = document.createElement('p');
+    meta.className = 'saved-card__meta mb-0';
+    const assetLabel = distribution.assets.length === 1 ? 'ativo' : 'ativos';
+    meta.textContent = `${distribution.assets.length} ${assetLabel} · ${currencyFormatter.format(
+      distribution.totalAmount
+    )}`;
+    infoWrapper.append(title, meta);
+
+    const actionsWrapper = document.createElement('div');
+    actionsWrapper.className = 'd-flex align-items-center gap-2 flex-shrink-0';
+    const badge = document.createElement('span');
+    badge.className = 'saved-card__badge';
+    badge.textContent = 'Carregar';
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'saved-card__delete';
+    deleteButton.dataset.action = 'delete';
+    deleteButton.dataset.id = distribution.id;
+    deleteButton.setAttribute('aria-label', `Remover ${distribution.name}`);
+    deleteButton.textContent = 'Remover';
+    actionsWrapper.append(badge, deleteButton);
+
+    card.append(infoWrapper, actionsWrapper);
+    return card;
+  }
+
+  function loadDistribution(distributionId) {
+    const numericId = Number(distributionId);
+    const distribution = savedDistributions.find((item) => item.id === numericId);
+    if (!distribution) return;
+
+    totalInput.value = currencyFormatter.format(distribution.totalAmount);
+    assetsList.innerHTML = '';
+    distribution.assets.forEach((asset) => addAsset(asset));
+    if (distributionNameInput) {
+      distributionNameInput.value = distribution.name;
+    }
+    activeDistributionId = distribution.id;
+    renderSavedDistributions();
+    setSaveFeedback(`Distribuição "${distribution.name}" carregada.`, 'success');
+  }
+
+  function deleteDistribution(distributionId) {
+    const numericId = Number(distributionId);
+    const index = savedDistributions.findIndex((item) => item.id === numericId);
+    if (index === -1) return;
+    const [removed] = savedDistributions.splice(index, 1);
+    if (activeDistributionId === numericId) {
+      activeDistributionId = null;
+    }
+    renderSavedDistributions();
+    setSaveFeedback(`Distribuição "${removed.name}" removida.`, 'muted');
+  }
+
+  function serializeAssets(rows) {
+    return rows.map((row, index) => {
+      const nameInput = row.querySelector('.asset-name');
+      const percentInput = row.querySelector('.asset-percent');
+      const rawName = nameInput?.value?.trim();
+      const percentageValue = Number(percentInput?.value);
+      return {
+        name: rawName || `Ativo ${index + 1}`,
+        percentage: Number.isFinite(percentageValue) ? percentageValue : 0,
+      };
+    });
+  }
+
+  function setSaveFeedback(message = '', tone = 'muted') {
+    if (!saveFeedback) return;
+    const toneClass =
+      tone === 'success'
+        ? 'text-success'
+        : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+        ? 'text-warning'
+        : 'text-muted';
+    saveFeedback.textContent = message;
+    saveFeedback.className = `form-text mt-2 ${toneClass}`;
+  }
+
+  function updateSavedCounter() {
+    if (!savedCounter) return;
+    const total = savedDistributions.length;
+    savedCounter.textContent = total
+      ? `${total} ${total === 1 ? 'lista salva' : 'listas salvas'}`
+      : 'Nenhuma ainda';
   }
 });
 
